@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "FIelNFfn1JoTyearnCU24LlrSPrFqEorPMmxIJ3qNkQ=",
+  "Source": "OpsDashboard.Api",
+  "BasePath": "_content/OpsDashboard.Api",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}
