@@ -97,6 +97,26 @@ public async Task<IActionResult> GetById(Guid id)
         CreatedAt = e.CreatedAt
     });
 }
+[HttpPatch("{id:guid}/status")]
+public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateEventStatusDto dto)
+{
+    var entity = await _context.Events.FirstOrDefaultAsync(e => e.Id == id);
+
+    if (entity is null)
+        return NotFound();
+
+    entity.Status = dto.Status;
+
+    if (dto.Status == EventStatus.Resolved)
+        entity.ResolvedAt = DateTime.UtcNow;
+    else
+        entity.ResolvedAt = null;
+
+    await _context.SaveChangesAsync();
+
+    return NoContent();
+}
+
 
 
 
