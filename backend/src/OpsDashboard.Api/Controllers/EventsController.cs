@@ -3,6 +3,7 @@ using OpsDashboard.Api.Data;
 using OpsDashboard.Api.Models;
 using OpsDashboard.Api.Dtos;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace OpsDashboard.Api.Controllers;
 
@@ -49,7 +50,7 @@ public async Task<IActionResult> GetAll([FromQuery] EventQueryDto query)
     return Ok(events);
 }
 
-
+[Authorize]
 [HttpPost]
 public async Task<IActionResult> Create([FromBody] EventCreateDto dto)
 {
@@ -97,6 +98,7 @@ public async Task<IActionResult> GetById(Guid id)
         CreatedAt = e.CreatedAt
     });
 }
+[Authorize]
 [HttpPatch("{id:guid}/status")]
 public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateEventStatusDto dto)
 {
