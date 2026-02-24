@@ -76,6 +76,17 @@ builder.Services
             ClockSkew = TimeSpan.FromSeconds(30)
         };
     });
+    builder.Services.AddCors(options =>
+{
+    options.AddPolicy("DevCors", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
+
 
 builder.Services.AddAuthorization();
 
@@ -88,7 +99,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseCors("DevCors");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

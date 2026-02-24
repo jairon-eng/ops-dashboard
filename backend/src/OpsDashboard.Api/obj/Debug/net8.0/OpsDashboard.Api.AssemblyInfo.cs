@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("OpsDashboard.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+081bfeccae6ded62f64ba3f14177cd7b019fa181")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+930f01004324d3db1ea61ce88a718ab71dd87651")]
 [assembly: System.Reflection.AssemblyProductAttribute("OpsDashboard.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("OpsDashboard.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
