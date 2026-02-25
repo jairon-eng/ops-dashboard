@@ -17,23 +17,7 @@ function buildEventsQuery({ status, severity }) {
   return qs ? `/api/Events?${qs}` : "/api/Events";
 }
 
-export default function App() {
-  // ✅ Auth gate
-  const [authed, setAuthed] = useState(isLoggedIn());
-
-  useEffect(() => {
-    // si api.js detecta 401 dispara auth:loggedOut
-    const handler = () => setAuthed(false);
-    window.addEventListener("auth:loggedOut", handler);
-    return () => window.removeEventListener("auth:loggedOut", handler);
-  }, []);
-
-  // Si no está logueado, solo mostramos login
-  if (!authed) {
-    return <LoginForm onSuccess={() => setAuthed(true)} />;
-  }
-
-  // ✅ Tu dashboard actual, intacto
+function Dashboard({ onLogout }) {
   const [metrics, setMetrics] = useState(null);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -54,7 +38,10 @@ export default function App() {
     setLoading(true);
     setError("");
     try {
-      const [m, e] = await Promise.all([apiGet("/api/Metrics"), apiGet(eventsUrl)]);
+      const [m, e] = await Promise.all([
+        apiGet("/api/Metrics"),
+        apiGet(eventsUrl),
+      ]);
       setMetrics(m);
       setEvents(e);
     } catch (err) {
@@ -66,13 +53,12 @@ export default function App() {
 
   useEffect(() => {
     refreshAll();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventsUrl]);
 
   async function onCreate(e) {
     e.preventDefault();
     try {
-      await apiPost("/api/Events", form); // 🔐 ahora manda Bearer automáticamente
+      await apiPost("/api/Events", form);
       setForm({ title: "", type: "Incident", severity: "Low", source: "Manual" });
       await refreshAll();
     } catch (err) {
@@ -82,7 +68,7 @@ export default function App() {
 
   async function markResolved(id) {
     try {
-      await apiPatch(`/api/Events/${id}/status`, { status: "Resolved" }); // 🔐 Bearer
+      await apiPatch(`/api/Events/${id}/status`, { status: "Resolved" });
       await refreshAll();
     } catch (err) {
       setError(err.message || "Error");
@@ -114,21 +100,12 @@ export default function App() {
           <button onClick={refreshAll} disabled={loading}>
             Refresh
           </button>
-
-          <button
-            onClick={() => {
-              clearToken();
-              setAuthed(false);
-            }}
-          >
-            Logout
-          </button>
+          <button onClick={onLogout}>Logout</button>
         </div>
       </header>
 
       {error && <div className="error">{error}</div>}
 
-      {/* KPIs */}
       <section className="kpis">
         <div className="card">
           <div className="kpi-title">Open Events</div>
@@ -146,13 +123,14 @@ export default function App() {
         </div>
       </section>
 
-      {/* Filters */}
       <section className="card form-section">
         <h4>Filters</h4>
         <div className="form-grid">
           <select
             value={filters.status}
-            onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
+            onChange={(e) =>
+              setFilters((f) => ({ ...f, status: e.target.value }))
+            }
           >
             {statuses.map((s) => (
               <option key={s} value={s}>
@@ -163,7 +141,9 @@ export default function App() {
 
           <select
             value={filters.severity}
-            onChange={(e) => setFilters((f) => ({ ...f, severity: e.target.value }))}
+            onChange={(e) =>
+              setFilters((f) => ({ ...f, severity: e.target.value }))
+            }
           >
             {severities.map((s) => (
               <option key={s} value={s}>
@@ -174,7 +154,6 @@ export default function App() {
         </div>
       </section>
 
-      {/* Table */}
       <section className="card">
         <table className="table">
           <thead>
@@ -218,20 +197,23 @@ export default function App() {
         </table>
       </section>
 
-      {/* Create */}
       <section className="card form-section">
         <h4>Create Event</h4>
         <form onSubmit={onCreate} className="form-grid">
           <input
             placeholder="Title"
             value={form.title}
-            onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, title: e.target.value }))
+            }
             required
           />
 
           <select
             value={form.type}
-            onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, type: e.target.value }))
+            }
           >
             {types.map((t) => (
               <option key={t}>{t}</option>
@@ -240,16 +222,22 @@ export default function App() {
 
           <select
             value={form.severity}
-            onChange={(e) => setForm((f) => ({ ...f, severity: e.target.value }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, severity: e.target.value }))
+            }
           >
-            {severities.filter(Boolean).map((s) => (
-              <option key={s}>{s}</option>
-            ))}
+            {severities
+              .filter(Boolean)
+              .map((s) => (
+                <option key={s}>{s}</option>
+              ))}
           </select>
 
           <select
             value={form.source}
-            onChange={(e) => setForm((f) => ({ ...f, source: e.target.value }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, source: e.target.value }))
+            }
           >
             {sources.map((s) => (
               <option key={s}>{s}</option>
@@ -260,5 +248,28 @@ export default function App() {
         </form>
       </section>
     </div>
+  );
+}
+
+export default function App() {
+  const [authed, setAuthed] = useState(isLoggedIn());
+
+  useEffect(() => {
+    const handler = () => setAuthed(false);
+    window.addEventListener("auth:loggedOut", handler);
+    return () => window.removeEventListener("auth:loggedOut", handler);
+  }, []);
+
+  if (!authed) {
+    return <LoginForm onSuccess={() => setAuthed(true)} />;
+  }
+
+  return (
+    <Dashboard
+      onLogout={() => {
+        clearToken();
+        setAuthed(false);
+      }}
+    />
   );
 }
