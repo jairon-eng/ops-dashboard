@@ -250,24 +250,42 @@ function Dashboard({ onLogout }) {
     </div>
   );
 }
-
 export default function App() {
   const [authed, setAuthed] = useState(isLoggedIn());
+  const [logoutReason, setLogoutReason] = useState("");
 
   useEffect(() => {
-    const handler = () => setAuthed(false);
+    const handler = (e) => {
+      setLogoutReason(
+        e?.detail?.reason === "expired"
+          ? "Tu sesión expiró. Inicia sesión de nuevo."
+          : ""
+      );
+      setAuthed(false);
+    };
+
     window.addEventListener("auth:loggedOut", handler);
     return () => window.removeEventListener("auth:loggedOut", handler);
   }, []);
 
   if (!authed) {
-    return <LoginForm onSuccess={() => setAuthed(true)} />;
+    return (
+      <LoginForm
+        onSuccess={() => {
+          setAuthed(true);
+          setLogoutReason("");
+        }}
+        message={logoutReason}
+      />
+    );
   }
 
   return (
     <Dashboard
       onLogout={() => {
         clearToken();
+        // opcional: limpiar mensaje
+        setLogoutReason("");
         setAuthed(false);
       }}
     />

@@ -21,7 +21,7 @@ async function request(path, { method = "GET", body, auth = false } = {}) {
 
   if (res.status === 401) {
     clearToken();
-    window.dispatchEvent(new Event("auth:loggedOut"));
+   window.dispatchEvent(new CustomEvent("auth:loggedOut", { detail: { reason: "expired" } }));
     throw new Error("Unauthorized (token inválido o expirado)");
   }
 
