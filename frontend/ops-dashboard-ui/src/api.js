@@ -1,7 +1,7 @@
 import { getToken, clearToken } from "./auth/token";
 
 // Si no quieres .env todavía, esto funciona igual:
-const API_BASE = ""; 
+const API_BASE = "";
 // O si tu frontend y backend están en distintos hosts/puertos:
 // const API_BASE = "https://localhost:5001";
 

@@ -1,15 +1,37 @@
+version: "3.9"
+
 services:
   db:
     image: postgres:16
-    container_name: ops-dashboard-db
+    container_name: ops-db
     environment:
-      POSTGRES_DB: opsdashboard
+      POSTGRES_DB: opsdb
       POSTGRES_USER: opsuser
       POSTGRES_PASSWORD: opspass
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - opsdbdata:/var/lib/postgresql/data
+
+  api:
+    build: ./backend/src/OpsDashboard.Api
+    container_name: ops-api
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      ASPNETCORE_URLS: "http://+:8080"
+      ConnectionStrings__Default: "Host=db;Port=5432;Database=opsdb;Username=opsuser;Password=opspass"
+    depends_on:
+      - db
+
+  web:
+    build: ./frontend/ops-dashboard-ui
+    container_name: ops-web
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
 
 volumes:
-  pgdata:
+  opsdbdata:
