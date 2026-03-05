@@ -38,12 +38,12 @@ public async Task<IActionResult> GetAll([FromQuery] EventQueryDto query)
     var pageSize = query.PageSize < 1 ? 50 : query.PageSize;
     pageSize = pageSize > 100 ? 100 : pageSize;
 
-    q = q
+    var totalCount = await q.CountAsync();
+
+    var items = await q
         .OrderByDescending(e => e.CreatedAt)
         .Skip((page - 1) * pageSize)
-        .Take(pageSize);
-
-    var events = await q
+        .Take(pageSize)
         .Select(e => new EventListItemDto
         {
             Id = e.Id,
@@ -55,7 +55,7 @@ public async Task<IActionResult> GetAll([FromQuery] EventQueryDto query)
         })
         .ToListAsync();
 
-    return Ok(events);
+    return Ok(new PagedResult<EventListItemDto>(items, totalCount));
 }
 [Authorize]
 [HttpPost]
