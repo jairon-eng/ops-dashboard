@@ -9,12 +9,16 @@ const severities = ["", "Low", "Medium", "High"];
 const types = ["Incident", "Maintenance", "Alert"];
 const sources = ["Manual", "Api"];
 
-function buildEventsQuery({ status, severity }) {
+
+
+function buildEventsQuery({ status, severity, page, pageSize }) {
   const params = new URLSearchParams();
   if (status) params.set("Status", status);
   if (severity) params.set("Severity", severity);
+  params.set("page", String(page));
+  params.set("pageSize", String(pageSize));
   const qs = params.toString();
-  return qs ? `/api/Events?${qs}` : "/api/Events";
+  return `/api/Events?${qs}`;
 }
 
 function Dashboard({ onLogout }) {
@@ -24,6 +28,9 @@ function Dashboard({ onLogout }) {
   const [error, setError] = useState("");
 
   const [filters, setFilters] = useState({ status: "", severity: "" });
+  const [page, setPage] = useState(1);
+const [pageSize, setPageSize] = useState(10);
+const [totalCount, setTotalCount] = useState(0);
 
   const [form, setForm] = useState({
     title: "",
@@ -32,7 +39,10 @@ function Dashboard({ onLogout }) {
     source: "Manual",
   });
 
-  const eventsUrl = useMemo(() => buildEventsQuery(filters), [filters]);
+  const eventsUrl = useMemo(
+    () => buildEventsQuery({ ...filters, page, pageSize }),
+    [filters, page, pageSize]
+  );
 
   async function refreshAll() {
     setLoading(true);
@@ -40,10 +50,12 @@ function Dashboard({ onLogout }) {
     try {
       const [m, e] = await Promise.all([
         apiGet("/api/Metrics"),
-        apiGet(eventsUrl),
+        apiGet(eventsUrl)
       ]);
+      
       setMetrics(m);
-      setEvents(e);
+      setEvents(e.items ?? []);
+      setTotalCount(e.totalCount ?? 0);
     } catch (err) {
       setError(err.message || "Error");
     } finally {
@@ -60,6 +72,7 @@ function Dashboard({ onLogout }) {
     try {
       await apiPost("/api/Events", form);
       setForm({ title: "", type: "Incident", severity: "Low", source: "Manual" });
+      setPage(1);
       await refreshAll();
     } catch (err) {
       setError(err.message || "Error");
@@ -69,6 +82,7 @@ function Dashboard({ onLogout }) {
   async function markResolved(id) {
     try {
       await apiPatch(`/api/Events/${id}/status`, { status: "Resolved" });
+      setPage(1);
       await refreshAll();
     } catch (err) {
       setError(err.message || "Error");
@@ -87,7 +101,9 @@ function Dashboard({ onLogout }) {
     if (st === "InProgress") return "yellow";
     return "gray";
   }
-
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const from = totalCount === 0 ? 0 : (page - 1) * pageSize + 1;
+  const to = Math.min(page * pageSize, totalCount);
   return (
     <div className="container">
       <header className="header">
@@ -128,9 +144,10 @@ function Dashboard({ onLogout }) {
         <div className="form-grid">
           <select
             value={filters.status}
-            onChange={(e) =>
-              setFilters((f) => ({ ...f, status: e.target.value }))
-            }
+            onChange={(e) => {
+              setFilters((f) => ({ ...f, status: e.target.value }));
+              setPage(1);
+            }}
           >
             {statuses.map((s) => (
               <option key={s} value={s}>
@@ -141,9 +158,10 @@ function Dashboard({ onLogout }) {
 
           <select
             value={filters.severity}
-            onChange={(e) =>
-              setFilters((f) => ({ ...f, severity: e.target.value }))
-            }
+            onChange={(e) => {
+              setFilters((f) => ({ ...f, severity: e.target.value }));
+              setPage(1);
+            }}
           >
             {severities.map((s) => (
               <option key={s} value={s}>
@@ -196,6 +214,54 @@ function Dashboard({ onLogout }) {
           </tbody>
         </table>
       </section>
+      <section className="card" style={{ marginTop: 12 }}>
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 12,
+      flexWrap: "wrap",
+    }}
+  >
+    <div>
+      Showing <b>{from}</b>-<b>{to}</b> of <b>{totalCount}</b>
+    </div>
+
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <label>Page size</label>
+      <select
+        value={pageSize}
+        onChange={(e) => {
+          setPageSize(Number(e.target.value));
+          setPage(1);
+        }}
+      >
+        {[5, 10, 20, 50].map((n) => (
+          <option key={n} value={n}>
+            {n}
+          </option>
+        ))}
+      </select>
+
+      <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+        Prev
+      </button>
+
+      <span>
+        Page <b>{page}</b> / <b>{totalPages}</b>
+      </span>
+
+      <button
+        disabled={page >= totalPages}
+        onClick={() => setPage((p) => p + 1)}
+      >
+        Next
+      </button>
+    </div>
+  </div>
+</section>
+
 
       <section className="card form-section">
         <h4>Create Event</h4>
