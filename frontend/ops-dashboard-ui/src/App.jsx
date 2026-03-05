@@ -9,10 +9,13 @@ const severities = ["", "Low", "Medium", "High"];
 const types = ["Incident", "Maintenance", "Alert"];
 const sources = ["Manual", "Api"];
 
-function buildEventsQuery({ status, severity, page, pageSize, sort }) {
+function buildEventsQuery({ status, severity, search, page, pageSize, sort }) {
   const params = new URLSearchParams();
   if (status) params.set("Status", status);
   if (severity) params.set("Severity", severity);
+
+  // ✅ NEW: search by title
+  if (search) params.set("search", search);
 
   params.set("page", String(page));
   params.set("pageSize", String(pageSize));
@@ -28,7 +31,8 @@ function Dashboard({ onLogout }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [filters, setFilters] = useState({ status: "", severity: "" });
+  // ✅ NEW: add search into filters state
+  const [filters, setFilters] = useState({ status: "", severity: "", search: "" });
 
   const sortOptions = [
     { value: "createdAt_desc", label: "Newest first" },
@@ -153,6 +157,16 @@ function Dashboard({ onLogout }) {
       <section className="card form-section">
         <h4>Filters</h4>
         <div className="form-grid">
+          {/* ✅ NEW: search input */}
+          <input
+            placeholder="Search title..."
+            value={filters.search}
+            onChange={(e) => {
+              setFilters((f) => ({ ...f, search: e.target.value }));
+              setPage(1);
+            }}
+          />
+
           <select
             value={filters.status}
             onChange={(e) => {
