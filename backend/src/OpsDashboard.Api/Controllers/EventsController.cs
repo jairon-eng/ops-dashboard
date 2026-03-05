@@ -33,6 +33,14 @@ public async Task<IActionResult> GetAll([FromQuery] EventQueryDto query)
 
     if (query.To.HasValue)
         q = q.Where(e => e.CreatedAt <= query.To.Value.ToUniversalTime());
+        // ✅ Search by title
+if (!string.IsNullOrWhiteSpace(query.Search))
+{
+    var s = query.Search.Trim().ToLower();
+
+    q = q.Where(e =>
+        e.Title.ToLower().Contains(s));
+}
 
     var page = query.Page < 1 ? 1 : query.Page;
     var pageSize = query.PageSize < 1 ? 50 : query.PageSize;

@@ -9,16 +9,17 @@ const severities = ["", "Low", "Medium", "High"];
 const types = ["Incident", "Maintenance", "Alert"];
 const sources = ["Manual", "Api"];
 
-
-
-function buildEventsQuery({ status, severity, page, pageSize }) {
+function buildEventsQuery({ status, severity, page, pageSize, sort }) {
   const params = new URLSearchParams();
   if (status) params.set("Status", status);
   if (severity) params.set("Severity", severity);
+
   params.set("page", String(page));
   params.set("pageSize", String(pageSize));
-  const qs = params.toString();
-  return `/api/Events?${qs}`;
+
+  if (sort) params.set("sort", sort);
+
+  return `/api/Events?${params.toString()}`;
 }
 
 function Dashboard({ onLogout }) {
@@ -28,9 +29,20 @@ function Dashboard({ onLogout }) {
   const [error, setError] = useState("");
 
   const [filters, setFilters] = useState({ status: "", severity: "" });
+
+  const sortOptions = [
+    { value: "createdAt_desc", label: "Newest first" },
+    { value: "createdAt_asc", label: "Oldest first" },
+    { value: "severity_desc", label: "Severity: High → Low" },
+    { value: "severity_asc", label: "Severity: Low → High" },
+    { value: "status_asc", label: "Status: Open → Resolved" },
+    { value: "status_desc", label: "Status: Resolved → Open" },
+  ];
+  const [sort, setSort] = useState("createdAt_desc");
+
   const [page, setPage] = useState(1);
-const [pageSize, setPageSize] = useState(10);
-const [totalCount, setTotalCount] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
 
   const [form, setForm] = useState({
     title: "",
@@ -40,19 +52,15 @@ const [totalCount, setTotalCount] = useState(0);
   });
 
   const eventsUrl = useMemo(
-    () => buildEventsQuery({ ...filters, page, pageSize }),
-    [filters, page, pageSize]
+    () => buildEventsQuery({ ...filters, page, pageSize, sort }),
+    [filters, page, pageSize, sort]
   );
 
   async function refreshAll() {
     setLoading(true);
     setError("");
     try {
-      const [m, e] = await Promise.all([
-        apiGet("/api/Metrics"),
-        apiGet(eventsUrl)
-      ]);
-      
+      const [m, e] = await Promise.all([apiGet("/api/Metrics"), apiGet(eventsUrl)]);
       setMetrics(m);
       setEvents(e.items ?? []);
       setTotalCount(e.totalCount ?? 0);
@@ -65,6 +73,7 @@ const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
     refreshAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventsUrl]);
 
   async function onCreate(e) {
@@ -101,9 +110,11 @@ const [totalCount, setTotalCount] = useState(0);
     if (st === "InProgress") return "yellow";
     return "gray";
   }
+
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
   const from = totalCount === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = Math.min(page * pageSize, totalCount);
+
   return (
     <div className="container">
       <header className="header">
@@ -169,6 +180,20 @@ const [totalCount, setTotalCount] = useState(0);
               </option>
             ))}
           </select>
+
+          <select
+            value={sort}
+            onChange={(e) => {
+              setSort(e.target.value);
+              setPage(1);
+            }}
+          >
+            {sortOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
         </div>
       </section>
 
@@ -214,54 +239,54 @@ const [totalCount, setTotalCount] = useState(0);
           </tbody>
         </table>
       </section>
+
       <section className="card" style={{ marginTop: 12 }}>
-  <div
-    style={{
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      gap: 12,
-      flexWrap: "wrap",
-    }}
-  >
-    <div>
-      Showing <b>{from}</b>-<b>{to}</b> of <b>{totalCount}</b>
-    </div>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            Showing <b>{from}</b>-<b>{to}</b> of <b>{totalCount}</b>
+          </div>
 
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <label>Page size</label>
-      <select
-        value={pageSize}
-        onChange={(e) => {
-          setPageSize(Number(e.target.value));
-          setPage(1);
-        }}
-      >
-        {[5, 10, 20, 50].map((n) => (
-          <option key={n} value={n}>
-            {n}
-          </option>
-        ))}
-      </select>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <label>Page size</label>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setPage(1);
+              }}
+            >
+              {[5, 10, 20, 50].map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
 
-      <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-        Prev
-      </button>
+            <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+              Prev
+            </button>
 
-      <span>
-        Page <b>{page}</b> / <b>{totalPages}</b>
-      </span>
+            <span>
+              Page <b>{page}</b> / <b>{totalPages}</b>
+            </span>
 
-      <button
-        disabled={page >= totalPages}
-        onClick={() => setPage((p) => p + 1)}
-      >
-        Next
-      </button>
-    </div>
-  </div>
-</section>
-
+            <button
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </section>
 
       <section className="card form-section">
         <h4>Create Event</h4>
@@ -269,17 +294,13 @@ const [totalCount, setTotalCount] = useState(0);
           <input
             placeholder="Title"
             value={form.title}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, title: e.target.value }))
-            }
+            onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
             required
           />
 
           <select
             value={form.type}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, type: e.target.value }))
-            }
+            onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
           >
             {types.map((t) => (
               <option key={t}>{t}</option>
@@ -292,18 +313,14 @@ const [totalCount, setTotalCount] = useState(0);
               setForm((f) => ({ ...f, severity: e.target.value }))
             }
           >
-            {severities
-              .filter(Boolean)
-              .map((s) => (
-                <option key={s}>{s}</option>
-              ))}
+            {severities.filter(Boolean).map((s) => (
+              <option key={s}>{s}</option>
+            ))}
           </select>
 
           <select
             value={form.source}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, source: e.target.value }))
-            }
+            onChange={(e) => setForm((f) => ({ ...f, source: e.target.value }))}
           >
             {sources.map((s) => (
               <option key={s}>{s}</option>
@@ -316,6 +333,7 @@ const [totalCount, setTotalCount] = useState(0);
     </div>
   );
 }
+
 export default function App() {
   const [authed, setAuthed] = useState(isLoggedIn());
   const [logoutReason, setLogoutReason] = useState("");
@@ -350,7 +368,6 @@ export default function App() {
     <Dashboard
       onLogout={() => {
         clearToken();
-        // opcional: limpiar mensaje
         setLogoutReason("");
         setAuthed(false);
       }}
