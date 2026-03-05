@@ -10,4 +10,6 @@ public class EventQueryDto
     public DateTime? To { get; set; }
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 50;
+    public string Sort { get; set; } = "createdAt_desc";
+
 }

@@ -40,22 +40,36 @@ public async Task<IActionResult> GetAll([FromQuery] EventQueryDto query)
 
     var totalCount = await q.CountAsync();
 
-    var items = await q
-        .OrderByDescending(e => e.CreatedAt)
-        .Skip((page - 1) * pageSize)
-        .Take(pageSize)
-        .Select(e => new EventListItemDto
-        {
-            Id = e.Id,
-            Title = e.Title,
-            Type = e.Type.ToString(),
-            Severity = e.Severity.ToString(),
-            Status = e.Status.ToString(),
-            CreatedAt = e.CreatedAt
-        })
-        .ToListAsync();
+// ✅ Allowlist sorting (seguro)
+q = query.Sort?.ToLowerInvariant() switch
+{
+    "createdat_asc" => q.OrderBy(e => e.CreatedAt),
+    "createdat_desc" => q.OrderByDescending(e => e.CreatedAt),
 
-    return Ok(new PagedResult<EventListItemDto>(items, totalCount));
+    "severity_asc" => q.OrderBy(e => e.Severity).ThenByDescending(e => e.CreatedAt),
+    "severity_desc" => q.OrderByDescending(e => e.Severity).ThenByDescending(e => e.CreatedAt),
+
+    "status_asc" => q.OrderBy(e => e.Status).ThenByDescending(e => e.CreatedAt),
+    "status_desc" => q.OrderByDescending(e => e.Status).ThenByDescending(e => e.CreatedAt),
+
+    _ => q.OrderByDescending(e => e.CreatedAt)
+};
+
+var items = await q
+    .Skip((page - 1) * pageSize)
+    .Take(pageSize)
+    .Select(e => new EventListItemDto
+    {
+        Id = e.Id,
+        Title = e.Title,
+        Type = e.Type.ToString(),
+        Severity = e.Severity.ToString(),
+        Status = e.Status.ToString(),
+        CreatedAt = e.CreatedAt
+    })
+    .ToListAsync();
+
+return Ok(new PagedResult<EventListItemDto>(items, totalCount));
 }
 [Authorize]
 [HttpPost]
