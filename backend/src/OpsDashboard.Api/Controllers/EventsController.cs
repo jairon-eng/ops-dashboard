@@ -34,8 +34,16 @@ public async Task<IActionResult> GetAll([FromQuery] EventQueryDto query)
     if (query.To.HasValue)
         q = q.Where(e => e.CreatedAt <= query.To.Value.ToUniversalTime());
 
-    var events = await q
+    var page = query.Page < 1 ? 1 : query.Page;
+    var pageSize = query.PageSize < 1 ? 50 : query.PageSize;
+    pageSize = pageSize > 100 ? 100 : pageSize;
+
+    q = q
         .OrderByDescending(e => e.CreatedAt)
+        .Skip((page - 1) * pageSize)
+        .Take(pageSize);
+
+    var events = await q
         .Select(e => new EventListItemDto
         {
             Id = e.Id,
@@ -49,7 +57,6 @@ public async Task<IActionResult> GetAll([FromQuery] EventQueryDto query)
 
     return Ok(events);
 }
-
 [Authorize]
 [HttpPost]
 public async Task<IActionResult> Create([FromBody] EventCreateDto dto)
