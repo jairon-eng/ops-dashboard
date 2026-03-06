@@ -13,8 +13,6 @@ function buildEventsQuery({ status, severity, search, page, pageSize, sort }) {
   const params = new URLSearchParams();
   if (status) params.set("Status", status);
   if (severity) params.set("Severity", severity);
-
-  // ✅ NEW: search by title
   if (search) params.set("search", search);
 
   params.set("page", String(page));
@@ -31,7 +29,6 @@ function Dashboard({ onLogout }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // ✅ NEW: add search into filters state
   const [filters, setFilters] = useState({ status: "", severity: "", search: "" });
 
   const sortOptions = [
@@ -93,6 +90,9 @@ function Dashboard({ onLogout }) {
   }
 
   async function markResolved(id) {
+    const confirmed = window.confirm("Are you sure you want to resolve this event?");
+    if (!confirmed) return;
+
     try {
       await apiPatch(`/api/Events/${id}/status`, { status: "Resolved" });
       setPage(1);
@@ -157,7 +157,6 @@ function Dashboard({ onLogout }) {
       <section className="card form-section">
         <h4>Filters</h4>
         <div className="form-grid">
-          {/* ✅ NEW: search input */}
           <input
             placeholder="Search title..."
             value={filters.search}
@@ -211,48 +210,64 @@ function Dashboard({ onLogout }) {
         </div>
       </section>
 
-      <section className="card">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Type</th>
-              <th>Severity</th>
-              <th>Status</th>
-              <th>Created</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {events.map((ev) => (
-              <tr key={ev.id}>
-                <td>{ev.title}</td>
-                <td>{ev.type}</td>
-                <td>
-                  <span className={`badge ${severityClass(ev.severity)}`}>
-                    {ev.severity}
-                  </span>
-                </td>
-                <td>
-                  <span className={`badge ${statusClass(ev.status)}`}>
-                    {ev.status}
-                  </span>
-                </td>
-                <td>{new Date(ev.createdAt).toLocaleString()}</td>
-                <td>
-                  <button
-                    className="btn-primary"
-                    disabled={ev.status === "Resolved"}
-                    onClick={() => markResolved(ev.id)}
-                  >
-                    Resolve
-                  </button>
-                </td>
+      {loading && (
+        <section className="card" style={{ marginTop: 12 }}>
+          Loading events...
+        </section>
+      )}
+
+      {!loading && (
+        <section className="card">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Type</th>
+                <th>Severity</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
+            </thead>
+            <tbody>
+              {events.length === 0 ? (
+                <tr>
+                  <td colSpan="6" style={{ textAlign: "center", padding: "24px" }}>
+                    No events found
+                  </td>
+                </tr>
+              ) : (
+                events.map((ev) => (
+                  <tr key={ev.id}>
+                    <td>{ev.title}</td>
+                    <td>{ev.type}</td>
+                    <td>
+                      <span className={`badge ${severityClass(ev.severity)}`}>
+                        {ev.severity}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`badge ${statusClass(ev.status)}`}>
+                        {ev.status}
+                      </span>
+                    </td>
+                    <td>{new Date(ev.createdAt).toLocaleString()}</td>
+                    <td>
+                      <button
+                        className="btn-primary"
+                        disabled={ev.status === "Resolved"}
+                        onClick={() => markResolved(ev.id)}
+                      >
+                        Resolve
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </section>
+      )}
 
       <section className="card" style={{ marginTop: 12 }}>
         <div
