@@ -1,124 +1,242 @@
-#  🚀 Ops Dashboard
+# 🚀 Ops Dashboard
 
-A full stack operational dashboard built with:
+A full-stack operational monitoring dashboard built with:
 
-- ASP.NET Core 8 (Web API)
+- ASP.NET Core 8 Web API
 - Entity Framework Core
-- PostgreSQL (Docker)
+- PostgreSQL
 - React + Vite
-- Swagger (API documentation)
+- Docker Compose
+- JWT Authentication
+- Swagger
 
-## 📌 Overview
+This project simulates an internal operations monitoring tool used to track system incidents and maintenance events.
 
-Ops Dashboard is a full stack application designed to simulate an operational monitoring tool.
+---
+
+# 📌 Overview
+
+**Ops Dashboard** is a full-stack application designed to simulate a lightweight operational monitoring system.
 
 It allows users to:
 
 - Register operational events
-- Track severity and status
-- Apply dynamic filters
-- View real-time KPIs
-- Update event status with business rules
+- Track event severity and status
+- Filter and search events dynamically
+- View operational KPIs
+- Resolve incidents with business logic enforcement
 
-The goal of this project is to demonstrate clean architecture, domain logic, and full stack integration — not just basic CRUD functionality.
+The goal of this project is to demonstrate **full stack architecture, API design, and real domain behavior**, not just basic CRUD functionality.
 
-## 🏗 Architecture
+---
 
-### 🔧 Backend
+# 🏗 Architecture
+
+## 🔧 Backend
+
 - ASP.NET Core 8 Web API
 - Entity Framework Core (Code First)
 - PostgreSQL
-- DTO-based responses
+- JWT authentication
+- DTO-based API responses
 - Business rule enforcement
 - Aggregation queries for metrics
+- Filtering, sorting, pagination, and search
 
-### 🎨 Frontend
+Key concepts demonstrated:
+
+- RESTful API design
+- Query parameter filtering
+- Allow-list sorting for security
+- Pagination with total count
+- Domain logic inside application layer
+
+---
+
+## 🎨 Frontend
+
 - React (Vite)
 - Fetch API integration
-- Proxy configuration for local development
-- Responsive dashboard layout
-- Badge-based status visualization
+- Token-based authentication
+- Dashboard UI with KPIs
+- Badge-based severity/status visualization
+- Dynamic filtering
+- Pagination controls
+- Search functionality
 
-### 🗃 Database
-- PostgreSQL running via Docker
-- Enums stored as strings
+The frontend communicates with the API through `/api` routes proxied via Nginx when running inside Docker.
+
+---
+
+## 🗃 Database
+
+- PostgreSQL 16
+- Running inside Docker
 - EF Core migrations
+- Enums stored as strings for readability
 
-## 🚀  How to Run
+Migrations are automatically applied at startup using:
 
-### 1. Start PostgreSQL (Docker)
+```csharp
+db.Database.Migrate();
+```
 
-docker compose up -d
+This allows the application to initialize the database schema automatically when containers start.
 
-### 2. Run Backend
+---
 
+# 🐳 Running with Docker (Recommended)
+
+The entire application can be started with **one command**.
+
+## Requirements
+
+- Docker
+- Docker Compose
+
+## Start the system
+
+From the root of the repository:
+
+```bash
+docker compose up --build
+```
+
+This starts:
+
+| Service    | URL                            |
+|------------|--------------------------------|
+| Frontend   | http://localhost:5173          |
+| API        | http://localhost:8080          |
+| Swagger    | http://localhost:8080/swagger  |
+| PostgreSQL | localhost:5432                |
+
+Docker services:
+
+- **db** → PostgreSQL database
+- **api** → ASP.NET Core Web API
+- **web** → React build served with Nginx
+
+---
+
+# 🧪 Running Locally (Without Docker)
+
+## 1. Start PostgreSQL
+
+```bash
+docker compose up -d db
+```
+
+## 2. Run backend
+
+```bash
 cd backend
 dotnet run --project src/OpsDashboard.Api
+```
 
 Swagger:
+
+```text
 http://localhost:5282/swagger
+```
 
-### 3. Run Frontend
+## 3. Run frontend
 
+```bash
 cd frontend/ops-dashboard-ui
 npm install
 npm run dev
+```
 
 Frontend:
+
+```text
 http://localhost:5173
+```
 
-## 📊 API Endpoints
+---
 
-### 📁 Events
+# 📊 API Endpoints
 
-- GET /api/events
-- GET /api/events/{id}
-- POST /api/events
-- PATCH /api/events/{id}/status
+## Events
 
-Supports filtering:
-- Status
-- Severity
+```text
+GET    /api/events
+GET    /api/events/{id}
+POST   /api/events
+PATCH  /api/events/{id}/status
+```
 
-### 📈  Metrics
+Features supported:
 
-- GET /api/metrics
+- Filtering
+- Pagination
+- Sorting
+- Search by title
 
-Returns:
+Example:
+
+```text
+/api/events?severity=High&sort=createdAt_desc&page=1&pageSize=10
+```
+
+---
+
+## Metrics
+
+```text
+GET /api/metrics
+```
+
+Returns operational KPIs:
+
 - Open event count
 - Resolved today count
 - Events grouped by severity
 
-## 🧠 Business Logic Example
+---
 
-When updating an event status:
+# 🔐 Authentication
 
-If status becomes Resolved,
-ResolvedAt is automatically set to UTC now.
+The API uses **JWT authentication**.
 
-This demonstrates real domain logic beyond simple CRUD operations.
+Protected endpoints:
 
-## 🎯 Purpose of This Project
+- Create event
+- Update event status
 
-This project demonstrates:
+Public endpoints:
 
-- RESTful API design
-- Clean separation of concerns
+- Event queries
+- Metrics
+
+---
+
+# 🎯 Purpose of This Project
+
+This project demonstrates practical full-stack engineering skills:
+
+- ASP.NET Core API development
 - EF Core with PostgreSQL
-- Aggregation queries
-- Frontend-backend integration
-- Structured Git commit history
+- React frontend integration
+- Authentication with JWT
+- Dockerized infrastructure
+- API filtering and pagination
 - Maintainable architecture
 
-## 🔮 Future Improvements
+---
 
-- Pagination support
-- Authentication & role-based access
-- Dockerfile for production
-- Unit testing
+# 🔮 Possible Future Improvements
+
+- Role-based access control
+- Unit tests for API services
 - CI/CD pipeline
+- Production deployment configuration
+- Real-time updates with WebSockets
 
-## 👨‍💻 Author
+---
 
-Jairon Misael Herrera Monterroso  
-Full Stack Developer | .NET & React
+# 👨‍💻 Author
+
+**Jairon Misael Herrera Monterroso**  
+Full Stack Developer — .NET & React
